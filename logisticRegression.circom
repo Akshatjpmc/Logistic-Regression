@@ -29,6 +29,7 @@ template AddSub () {
 // extracting magnitude and sign bit for in1
   int_sign1 <-- in1%10;
   int_mag1 <-- in1\10;
+  in1 === int_mag1*10 + int_sign1;
 
 
 
@@ -36,6 +37,8 @@ template AddSub () {
 
   int_sign2 <-- in2%10;
   int_mag2 <-- in2\10;
+  in2 === int_mag2*10 + int_sign2;
+
 
 //performing add/sub operations
 
@@ -135,13 +138,14 @@ template Mul() {
 
 template taylorSeries () {
     signal input x;
+    //declaring constants for the series 
     signal one <== 2500000000000000000;
     signal two <== 208333333333333331;
     signal three <== 20833333333333330;
     signal four <== 5000000000000000000;
     signal output out ;
 
-
+//using multiplication library to multiply the terms 
 component mul = Mul();
 
 mul.a <== one;
@@ -187,6 +191,7 @@ log(third_term_final);
 
 //signal series <== 5000000000000000000 + first_term + second_term_final + third_term_final ;
 
+//using AddSub library to add the terms 
 component add = AddSub();
 
 add.in1 <== four;
@@ -218,6 +223,7 @@ template logisticRegression2(m,n) {
   signal  insa[m+1][n+1];
   signal x[m];
   signal output taylorResult[m];
+  signal taylorRemainder[m];
   signal output result[m];
   signal efficiencyDivisor;
    signal output efficiencySignal;
@@ -225,7 +231,7 @@ template logisticRegression2(m,n) {
    signal efficiency;
   
 
- 
+ // declaring components for mul and add
 component mult[m+1][n+1] ;
 component adds[m+1][n+1] ;
 component taylor[m+1];
@@ -235,6 +241,7 @@ component checker;
 
        var count = 0;
 
+
 for(var j =0; j<m; j++){
     ins[j][0] <== 0;
     insa[j][0] <== 0;
@@ -243,6 +250,7 @@ for(var j =0; j<m; j++){
     //     ins[j][i+1] <== ins[j][i] + a[j][i]*w[i];
     // }
 
+// performing MAC operations 
 
     for(var i=0;i<n;i++){
 
@@ -260,18 +268,21 @@ for(var j =0; j<m; j++){
 
     x[j] <==  insa[j][n];
 
-
+    //feeding the output to taylor series 
     taylor[j] = taylorSeries();
     taylor[j].x <== x[j];
     taylorResult[j] <-- taylor[j].out \ 10;
- 
+    taylorRemainder[j] <-- taylor[j].out% 10;
+    taylor[j].out === taylorResult[j]*10 + taylorRemainder[j];
 
+
+// component to check series result is < or > 0.5 
     check[j] = LessThan(252);
     check[j].in[0] <== 500000000000000000;
     check[j].in[1] <== taylorResult[j];
     result[j] <== check[j].out;    
 
-
+// comparing circuit results with ml results to confirm >90% efficiency
     if(result[j] == ans[j]){
         count ++;
     }
@@ -284,6 +295,7 @@ for(var j =0; j<m; j++){
 } 
 
   efficiency <-- (count/m);
+  efficiency*m === count;
    efficiencySignal <== efficiency*1000;
 
 
@@ -297,4 +309,5 @@ for(var j =0; j<m; j++){
 
 }
 
-component main = logisticRegression2(25,28);
+
+component main = logisticRegression2(250,28);
